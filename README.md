@@ -36,18 +36,44 @@ make sure to keep a copy as it will be needed
 to verify the election and compute the result.
 
 
-# Counting the Votes
+# Counting Votes
 
 Once the election has finished, download the
 results spreadsheet as CSV from Google Drive and
 name it `election.csv`. Place it in the directory
 together with `verify_election.py` and
-`valid_tokens.txt`. To count the votes run
-`verify_election.py`. It will print the winner
-of each round, as well as the overall winner.
+`valid_tokens.txt`. 
+
+You shoud publish both `election.csv` and
+`valid_tokens.txt`in a place accessible to all
+participants. This will allow them to verify
+that their vote was recorded correctly and thereby
+verify the outcome of the election.
+
+To count the votes run `verify_election.py`. It
+will print the winner of each round, as well as
+the overall winner.
 
 It will perform at most 50 rounds of elimination
 and stop if there is no winner by that time.
+
+
+# A Voters Guide
+
+You will receive an email with instructions.
+Follow them. Protect your token, if someone
+else obtains a copy they can cast votes in your
+name. They can also reveal how you voted once
+the election has ended.
+
+You should obtain a copy of `election.csv` and
+`valid_tokens.txt` once polling has ended. Use
+them to verify that your vote was recorded
+correctly. You can compute the outcome of
+the election yourself with that information,
+doing this will increase the credibility of
+the election. See "Counting Votes" for how
+to do this.
 
 
 # Technical Details
