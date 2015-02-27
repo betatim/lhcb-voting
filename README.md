@@ -31,7 +31,7 @@ etc, etc.
 Afterwards run it, it will send one email to each
 voter with instructions for them.
 
-It will create a file named `valid_tokens.py`
+It will create a file named `valid_tokens.txt`
 make sure to keep a copy as it will be needed
 to verify the election and compute the result.
 
