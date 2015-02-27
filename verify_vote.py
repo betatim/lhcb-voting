@@ -1,3 +1,4 @@
+import csv
 import operator
 from collections import Counter
 
@@ -24,6 +25,16 @@ votes = [("b6a08f2fe68f3e1be8dbabcbd0abf3e497752a08c9365ba4009c85e7d3d21879",
          ("d5384124fdb6f8c7636c7d25015d536a4b93f0b2a380d64bab566b69cb9f9199",
           "John", "Jane", "Alice", "Joe"),
 ]
+
+def load_votes(fname="election.csv"):
+    votes = []
+    with open(fname) as csvfile:
+        lines = csv.reader(csvfile)
+        for line in lines:
+            votes.append(line[1:])
+
+    # slice off the header
+    return votes[1:]
 
 VALID_TOKENS = set(line.strip()
                    for line in open("valid_tokens.txt").readlines())
@@ -102,8 +113,9 @@ def determine_winner(ballots):
             print "Something went wrong"
             print "After 50 rounds of voting no winner could be found"
             break
-    
 
+
+votes = load_votes()
 valid_ballots = filter(unspoilt_ballot, votes)
 valid_ballots = remove_multi_voters(valid_ballots)
 valid_ballots = filter(valid_token, valid_ballots)
