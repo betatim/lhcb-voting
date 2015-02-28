@@ -1,30 +1,31 @@
+import sys
 import csv
 import operator
 from collections import Counter
 
 
 # This produces a tie
-votes = [("b6a08f2fe68f3e1be8dbabcbd0abf3e497752a08c9365ba4009c85e7d3d21879",
-          "John", "Jane", "Alice", "Joe"),
-         ("aaea5ddf7712c351f57de1381f05734b408e39f86dbd60ba4d54446eebca202c",
-         "Joe", "John", "Jane", "Alice"),
-         # double voter
-         ("d5384124fdb6f8c7636c7d25015d536a4b93f0b2a380d64bab566b69cb9f9199",
-          "John", "Jane", "Alice", "Joe"),
-         ("d5384124fdb6f8c7636c7d25015d536a4b93f0b2a380d64bab566b69cb9f9199",
-          "John", "Jane", "Alice", "Joe"),
-         # invalid token
-         ("e5384124fdb6f8c7636c7d25015d546a4b93f0b2a380d64bab566b69cb9f9199",
-          "John", "Jane", "Alice", "John")
-]
+votes_tie = [("b6a08f2fe68f3e1be8dbabcbd0abf3e497752a08c9365ba4009c85e7d3d21879",
+              "John", "Jane", "Alice", "Joe"),
+             ("aaea5ddf7712c351f57de1381f05734b408e39f86dbd60ba4d54446eebca202c",
+              "Joe", "John", "Jane", "Alice"),
+             # double voter
+             ("d5384124fdb6f8c7636c7d25015d536a4b93f0b2a380d64bab566b69cb9f9199",
+              "John", "Jane", "Alice", "Joe"),
+             ("d5384124fdb6f8c7636c7d25015d536a4b93f0b2a380d64bab566b69cb9f9199",
+              "John", "Jane", "Alice", "Joe"),
+             # invalid token
+             ("e5384124fdb6f8c7636c7d25015d546a4b93f0b2a380d64bab566b69cb9f9199",
+              "John", "Jane", "Alice", "John")
+         ]
 # john wins
-votes = [("b6a08f2fe68f3e1be8dbabcbd0abf3e497752a08c9365ba4009c85e7d3d21879",
-          "John", "Jane", "Alice", "Joe"),
-         ("aaea5ddf7712c351f57de1381f05734b408e39f86dbd60ba4d54446eebca202c",
-         "Joe", "John", "Jane", "Alice"),
-         ("d5384124fdb6f8c7636c7d25015d536a4b93f0b2a380d64bab566b69cb9f9199",
-          "John", "Jane", "Alice", "Joe"),
-]
+votes_jhn = [("b6a08f2fe68f3e1be8dbabcbd0abf3e497752a08c9365ba4009c85e7d3d21879",
+              "John", "Jane", "Alice", "Joe"),
+             ("aaea5ddf7712c351f57de1381f05734b408e39f86dbd60ba4d54446eebca202c",
+              "Joe", "John", "Jane", "Alice"),
+             ("d5384124fdb6f8c7636c7d25015d536a4b93f0b2a380d64bab566b69cb9f9199",
+              "John", "Jane", "Alice", "Joe"),
+         ]
 
 def load_votes(fname="election.csv"):
     votes = []
@@ -82,7 +83,10 @@ def count_votes(rankings, eliminated=set()):
     tie = len(winners) > 1
     print "{win} of this round:".format(win="Winners" if tie else "Winner")
     for winner in winners:
-        print "Winner: %s with %i votes"%(winner)
+        print "  %s with %i votes"%(winner)
+
+    print "Eliminated this round:"
+    print "  " + ", ".join(eliminee for eliminee in eliminees)
         
     return tie, winners[0], eliminees
 
@@ -115,9 +119,17 @@ def determine_winner(ballots):
             break
 
 
-votes = load_votes()
+votes = votes_tie #load_votes()
+print "Loaded a total of %i ballots"%(len(votes))
 valid_ballots = filter(unspoilt_ballot, votes)
+print "Unspoilt ballots %i"%(len(valid_ballots))
 valid_ballots = remove_multi_voters(valid_ballots)
+print "Single vote ballots %i"%(len(valid_ballots))
 valid_ballots = filter(valid_token, valid_ballots)
+print "Valid token ballots %i"%(len(valid_ballots))
+
+if not valid_ballots:
+    print "No valid ballots left."
+    sys.exit(1)
 
 determine_winner(ballot[1:] for ballot in valid_ballots)
