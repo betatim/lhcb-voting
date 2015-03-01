@@ -15,10 +15,8 @@ def load_votes(fname="election.csv"):
     # slice off the header
     return votes[1:]
 
-VALID_TOKENS = set(line.strip()
-                   for line in open("valid_tokens.txt").readlines())
-def valid_token(ballot):
-    return ballot[0] in VALID_TOKENS
+def valid_token(valid_tokens, ballot):
+    return ballot[0] in valid_tokens
 
 def unspoilt_ballot(ballot):
     return len(ballot) == len(set(ballot))
@@ -77,6 +75,9 @@ def determine_winner(ballots):
     ballots = list(ballots)
 
     names = set(chain(*ballots))
+    print "These names received at least one vote:"
+    print "  " + ", ".join(names)
+    
     eliminated = set()
     rounds = 1
     
@@ -111,11 +112,17 @@ def determine_winner(ballots):
 if __name__ == "__main__":
     votes = load_votes()
     print "Loaded a total of %i ballots"%(len(votes))
+
     valid_ballots = filter(unspoilt_ballot, votes)
     print "Unspoilt ballots %i"%(len(valid_ballots))
+
     valid_ballots = remove_multi_voters(valid_ballots)
     print "Single vote ballots %i"%(len(valid_ballots))
-    valid_ballots = filter(valid_token, valid_ballots)
+
+    VALID_TOKENS = set(line.strip()
+                   for line in open("valid_tokens.txt").readlines())
+    valid_token_ = lambda x: valid_token(VALID_TOKENS, x)
+    valid_ballots = filter(valid_token_, valid_ballots)
     print "Valid token ballots %i"%(len(valid_ballots))
     
     if not valid_ballots:
