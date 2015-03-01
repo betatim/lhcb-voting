@@ -2,30 +2,8 @@ import sys
 import csv
 import operator
 from collections import Counter
+from itertools import chain
 
-
-# This produces a tie
-votes_tie = [("b6a08f2fe68f3e1be8dbabcbd0abf3e497752a08c9365ba4009c85e7d3d21879",
-              "John", "Jane", "Alice", "Joe"),
-             ("aaea5ddf7712c351f57de1381f05734b408e39f86dbd60ba4d54446eebca202c",
-              "Joe", "John", "Jane", "Alice"),
-             # double voter
-             ("d5384124fdb6f8c7636c7d25015d536a4b93f0b2a380d64bab566b69cb9f9199",
-              "John", "Jane", "Alice", "Joe"),
-             ("d5384124fdb6f8c7636c7d25015d536a4b93f0b2a380d64bab566b69cb9f9199",
-              "John", "Jane", "Alice", "Joe"),
-             # invalid token
-             ("e5384124fdb6f8c7636c7d25015d546a4b93f0b2a380d64bab566b69cb9f9199",
-              "John", "Jane", "Alice", "John")
-         ]
-# john wins
-votes_jhn = [("b6a08f2fe68f3e1be8dbabcbd0abf3e497752a08c9365ba4009c85e7d3d21879",
-              "John", "Jane", "Alice", "Joe"),
-             ("aaea5ddf7712c351f57de1381f05734b408e39f86dbd60ba4d54446eebca202c",
-              "Joe", "John", "Jane", "Alice"),
-             ("d5384124fdb6f8c7636c7d25015d536a4b93f0b2a380d64bab566b69cb9f9199",
-              "John", "Jane", "Alice", "Joe"),
-         ]
 
 def load_votes(fname="election.csv"):
     votes = []
@@ -62,74 +40,87 @@ def remove_multi_voters(ballots):
 def count_votes(rankings, eliminated=set()):
     votes = []
     for ranking in rankings:
-        for person in ranking:
+        # vote for lowest ranked person,
+        # not yet eliminated
+        for person in reversed(ranking):
             if person not in eliminated:
+                print 'voting for', person
                 votes.append(person)
                 break
             
     counts = Counter(votes)
     ranking = sorted(counts.iteritems(),
-                     key=operator.itemgetter(1), reverse=True)
+                     key=operator.itemgetter(1),
+                     reverse=True)
 
-    winners = [ranking[0]]
-    eliminees = []
-    for name,votes in ranking[1:]:
-        if votes == winners[-1][1]:
-            winners.append((name, votes))
-
-        else:
+    # Everyone who received the same number
+    # of votes as the least popular person
+    # is eliminated
+    eliminees = [ranking[0][0]]
+    threshold_vote = ranking[0][1]
+    for name,votes_ in ranking[1:]:
+        if votes_ == threshold_vote:
             eliminees.append(name)
+            
+    return set(eliminees)
 
-    tie = len(winners) > 1
-    print "{win} of this round:".format(win="Winners" if tie else "Winner")
-    for winner in winners:
-        print "  %s with %i votes"%(winner)
 
-    print "Eliminated this round:"
-    print "  " + ", ".join(eliminee for eliminee in eliminees)
-        
-    return tie, winners[0], eliminees
+class NoCandidatesLeftError(Exception):
+    pass
+
+class TooManyRoundsError(Exception):
+    def __init__(self, remaining):
+        self.remaining = remaining
+
 
 def determine_winner(ballots):
     ballots = list(ballots)
-    
+
+    names = set(chain(*ballots))
     eliminated = set()
     rounds = 1
+    
     while True:
         print
-        print "Round %i"%rounds
-        is_tied, winner, eliminated = count_votes(ballots, eliminated)
-        # if no one got eliminated, we have a winner
-        if not eliminated and not is_tied:
-            print
-            print "The overall winner:", winner[0]
-            break
+        left_over = [name for name in names if name not in eliminated]
+        if len(left_over) == 1:
+            print "We have a winner:", left_over[0]
+            return left_over[0]
 
-        elif not eliminated and is_tied:
-            print
-            print "There is a tie and no one was eliminated in the last round"
-            break
-    
-        eliminated = set(eliminated)
+        print "Round %i"%rounds
+        eliminated_ = count_votes(ballots, eliminated)
+        print "eliminated this time:", ", ".join(eliminated_)
+        
+        eliminated = eliminated.union(set(eliminated_))
+
+        left_over = [name for name in names if name not in eliminated]
+        if len(left_over) == 0:
+            print "Something went wrong"
+            print "Everyone has been eliminated"
+            raise NoCandidatesLeftError()
+            
         rounds += 1
         
         if rounds > 50:
             print "Something went wrong"
             print "After 50 rounds of voting no winner could be found"
-            break
+            print 'left over', left_over
+            raise TooManyRoundsError(left_over)
 
 
-votes = votes_tie #load_votes()
-print "Loaded a total of %i ballots"%(len(votes))
-valid_ballots = filter(unspoilt_ballot, votes)
-print "Unspoilt ballots %i"%(len(valid_ballots))
-valid_ballots = remove_multi_voters(valid_ballots)
-print "Single vote ballots %i"%(len(valid_ballots))
-valid_ballots = filter(valid_token, valid_ballots)
-print "Valid token ballots %i"%(len(valid_ballots))
+if __name__ == "__main__":
+    votes = load_votes()
+    print "Loaded a total of %i ballots"%(len(votes))
+    valid_ballots = filter(unspoilt_ballot, votes)
+    print "Unspoilt ballots %i"%(len(valid_ballots))
+    valid_ballots = remove_multi_voters(valid_ballots)
+    print "Single vote ballots %i"%(len(valid_ballots))
+    valid_ballots = filter(valid_token, valid_ballots)
+    print "Valid token ballots %i"%(len(valid_ballots))
+    
+    if not valid_ballots:
+        print "No valid ballots left."
+        sys.exit(1)
 
-if not valid_ballots:
-    print "No valid ballots left."
-    sys.exit(1)
+    determine_winner(ballot[1:] for ballot in valid_ballots)
 
-determine_winner(ballot[1:] for ballot in valid_ballots)
